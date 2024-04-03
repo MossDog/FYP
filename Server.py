@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request
 from DbDao import DbDao
+import numpy as np
+import cv2 as cv
 import threading
 import requests
 import time
@@ -11,7 +13,7 @@ app = Flask(__name__)
 # Initialize Database DAO Object
 db = DbDao()
 
-client_data  = None
+client_data  = {}
 
 @app.route('/receive_data', methods=['POST'])
 def receive_data():
@@ -53,10 +55,13 @@ def handle_connect():
     # Store client ips
     # client_data structure - {client id: (vitals ip, cameras ip)}
     if client_type == "vitals":
-        if client_id in client_data:
+        print("here 1")
+        if client_data and client_id in client_data:
+            print("here 2")
             _, cameras_ip = client_data[client_id]
             client_data[client_id] = (client_ip, cameras_ip)
         else:
+            print("here 3")
             client_data[client_id] = (client_ip, None)
     elif client_type == "cameras":
         if client_id in client_data:
@@ -65,12 +70,11 @@ def handle_connect():
         else:
             client_data[client_id] = (client_ip, None)
 
-    client_data[client_id] = {"client_type": client_ip}
-
     print(f"Client {client_id} connected from {client_ip}")
     print(type(client_ip))
 
     # Start a separate thread to request data from clients
+    print(client_data)
     if client_data[client_id][0] and client_data[client_id][1]:
         threading.Thread(target=request_data, args=(client_id,)).start()
 
@@ -86,7 +90,18 @@ def request_data(client_id):
         print(vital_response.json())
         print("requesting camera data")
         camera_response = requests.get(f"http://{client_data[client_id][1]}:5000/request_data")
-        print(camera_response.json())
+        data = camera_response.json()
+        frame1_list = data.get('frame1')
+        frame2_list = data.get('frame2')
+
+        # Convert lists back to NumPy arrays
+        frame1 = np.array(frame1_list, dtype=np.uint8)
+        frame2 = np.array(frame2_list, dtype=np.uint8)
+         # Process the data (e.g., display frames)
+        cv.imshow('Frame 1', frame1)
+        cv.imshow('Frame 2', frame2)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
         status = decide_status(vital_response, camera_response)
         # store data in db here
         time.sleep(5)
