@@ -64,8 +64,8 @@ def get_room_number():
 					print("Invalid input. Please enter 'y' or 'n'")
 
 
-def connect_to_server(room_no):
-	data = {"room_no":room_no}
+def connect_to_server(room_no, client_type):
+	data = {"room_no":room_no, "client_type":client_type}
 	response = requests.post(f"{SERVER_URL}/connect", json=data)
 	print("Response from server: ", response.text)
 
@@ -113,7 +113,7 @@ def collect_data():
         
 def main():
 	room_no = get_room_number()
-	connect_to_server(room_no)
+	connect_to_server(room_no, "vitals")
 	collect_data()
 	
 	

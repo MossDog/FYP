@@ -11,8 +11,7 @@ app = Flask(__name__)
 # Initialize Database DAO Object
 db = DbDao()
 
-connected_clients = {}
-
+client_data  = None
 
 @app.route('/receive_data', methods=['POST'])
 def receive_data():
@@ -45,26 +44,51 @@ def receive_data():
 
 @app.route('/connect', methods=['POST'])
 def handle_connect():
+    global client_data
+
     client_id = request.json.get('room_no')
+    client_type = request.json.get('client_type')
     client_ip = request.remote_addr
-    if client_id:
-        connected_clients[client_id] = client_ip
-        print(f"Client {client_id} connected from {client_ip}")
-        print(type(client_ip))
 
-        # Start a separate thread for the client to send requests
-        threading.Thread(target=request_data, args=(client_ip,)).start()
+    # Store client ips
+    # client_data structure - {client id: (vitals ip, cameras ip)}
+    if client_type == "vitals":
+        if client_id in client_data:
+            _, cameras_ip = client_data[client_id]
+            client_data[client_id] = (client_ip, cameras_ip)
+        else:
+            client_data[client_id] = (client_ip, None)
+    elif client_type == "cameras":
+        if client_id in client_data:
+            vitals_ip, _ = client_data[client_id]
+            client_data[client_id] = (vitals_ip, client_ip)
+        else:
+            client_data[client_id] = (client_ip, None)
 
-        return jsonify({'message': f"Client {client_id} connected"}), 200
-    else:
-        return jsonify({'error': 'Client ID not provided'}), 400
-    
+    client_data[client_id] = {"client_type": client_ip}
 
-def request_data(client_ip):
+    print(f"Client {client_id} connected from {client_ip}")
+    print(type(client_ip))
+
+    # Start a separate thread to request data from clients
+    if client_data[client_id][0] and client_data[client_id][1]:
+        threading.Thread(target=request_data, args=(client_id,)).start()
+
+    return jsonify({'message': f"Client {client_id} connected"}), 200
+
+
+def request_data(client_id):
+    global client_data
     while True:
-        print("requesting data")
-        response = requests.get(f"http://{client_ip}:5000/request_data")
-        print(response.json())
+
+        print("requesting vital data")
+        vital_response = requests.get(f"http://{client_data[client_id][0]}:5000/request_data")
+        print(vital_response.json())
+        print("requesting camera data")
+        camera_response = requests.get(f"http://{client_data[client_id][1]}:5000/request_data")
+        print(camera_response.json())
+        status = decide_status(vital_response, camera_response)
+        # store data in db here
         time.sleep(5)
 
 
