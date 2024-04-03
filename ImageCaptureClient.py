@@ -13,6 +13,8 @@ collected_data = None
 @app.route('/request_data', methods=['GET'])
 def send_data():
     global collected_data
+    while collected_data is None:
+        print("waiting")
     return jsonify(collected_data)
 
 def get_room_number():
@@ -39,7 +41,9 @@ def collect_data():
     while True:
         _, frame1 = cap1.read()
         _, frame2 = cap2.read()
-        collected_data = (frame1, frame2)
+        frame1_list = frame1.tolist()
+        frame2_list = frame2.tolist()
+        collected_data = {"frame1":frame1_list, "frame2":frame2_list}
 
 
 def main():
