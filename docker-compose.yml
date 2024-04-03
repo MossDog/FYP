@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:latest
+    restart: always
+
+    environment:
+      MYSQL_ROOT_PASSWORD: mossdog
+      MYSQL_DATABASE: DB
+      MYSQL_USER: mossdog
+      MYSQL_PASSWORD: mossdog
+
+    volumes:
+      - C:\Users\lukej\OneDrive\Desktop\New folder\DBVolume:/var/lib/mysql
+
+    ports:
+      - "3306:3306"
