@@ -1,7 +1,5 @@
-
 public class Main
 {	
-
 	public void startUI()
 	{
 		String[] a = {"MAIN"};
@@ -10,7 +8,6 @@ public class Main
 
 	public static void main(String[] args)
 	{
-		System.out.println("Hello World");
 		Main main = new Main();
 		main.startUI();	
 	}

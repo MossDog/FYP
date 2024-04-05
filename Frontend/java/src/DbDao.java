@@ -9,7 +9,7 @@ import java.util.List;
 
 public class DbDao {
 
-    private static final String DB_URL = "jdbc:mysql://your_remote_host:3306/DB";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/DB";
     private static final String USERNAME = "mossdog";
     private static final String PASSWORD = "mossdog";
 

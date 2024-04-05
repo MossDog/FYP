@@ -1,6 +1,9 @@
+DROP TABLE Observation;
+DROP TABLE Room;
+
 CREATE TABLE IF NOT EXISTS Room (
     room_no INT PRIMARY KEY,
-    age INT NOT NULL,
+    age INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Observation (
