@@ -6,6 +6,7 @@ import threading
 import requests
 import json
 import time
+import os
 
 # IP:port of server
 SERVER_URL = 'http://192.168.0.25:5000' 
@@ -50,22 +51,83 @@ def send_data():
 	return jsonify(collected_data)
 	
 
-def get_room_number():
+# Function to load user data from file or prompt user for new data
+def load_user_data():
+	file_path = 'user_data.txt'
+	if os.path.exists(file_path):
+		data = read_user_data(file_path)
+		if data and is_valid_data(data):
+			print_user_data(data)
+			if get_user_option() == 1:
+				return data
+	return gather_user_input()
+
+
+# Function to read user data from file
+def read_user_data(file_path):
+	try:
+		with open(file_path, 'r') as file:
+			data = file.read().strip().split(',')
+			return (int(data[0]), int(data[1])) if len(data) == 2 else None
+	except Exception as e:
+		print(f"Error reading user_data.txt: {e}")
+		return None
+
+
+# Function to check if user data is valid
+def is_valid_data(data):
+	return all(x > 0 for x in data)
+
+
+# Function to print user data and options
+def print_user_data(data):
+	room_no, user_age = data
+	print("\tCURRENT DATA ON FILE\t")
+	print(f"Room Number: {room_no}, Person Age: {user_age}")
+	print("\n1. Data is up to date\n2. Data is outdated")
+
+
+# Function to get user option
+def get_user_option():
 	while True:
-			room_no = input("Please enter the number of the room being monitored")
-			while True:
-				print(f"You entered: {room_no}")
-				confirmation = input("Is this correct? (Y/N)").lower()
-				if confirmation == "y":
-					return room_no
-				elif confirmation == "no":
-					break
-				else:
-					print("Invalid input. Please enter 'y' or 'n'")
+		try:
+			option = int(input("Please select an option: "))
+			if option in (1, 2):
+				return option
+			else:
+				print("Invalid option. Please select either 1 or 2.")
+		except ValueError:
+			print("Invalid input. Please enter a valid integer.")
+            
+
+# Function to gather new user input
+def gather_user_input():
+	while True:
+		try:
+			room_no = int(input("Please enter the room number being monitored: "))
+			user_age = int(input("Please enter the age of the person in this room: "))
+			if room_no > 0 and user_age > 0:
+				print(f"You entered: Room Number: {room_no}, Person Age: {user_age}")
+				confirmation = input("Is this correct? (Yes/No): ").lower()
+				if confirmation == "yes":
+					write_user_data('user_data.txt', room_no, user_age)
+					return room_no, user_age
+				elif confirmation != "no":
+					print("Please enter 'yes' or 'no'")
+			else:
+				print("Room number and age must be positive integers.")
+		except ValueError:
+			print("Invalid input. Please enter a valid integer.")
 
 
-def connect_to_server(room_no, client_type):
-	data = {"room_no":room_no, "client_type":client_type}
+# Function to write user data to file
+def write_user_data(file_path, room_no, user_age):
+	with open(file_path, 'w') as file:
+		file.write(f"{room_no},{user_age}")
+
+
+def connect_to_server(room_no, user_age, client_type):
+	data = {"room_no":room_no, "user_age":user_age, "client_type":client_type}
 	response = requests.post(f"{SERVER_URL}/connect", json=data)
 	print("Response from server: ", response.text)
 
@@ -108,10 +170,11 @@ def collect_data():
 			collected_data = {"bpm_avg": bpm_avg, "ir_c": ir_c}
 				
 			last_update = t
-        
+
 def main():
+	room_no, user_age = load_user_data()
 	room_no = get_room_number()
-	connect_to_server(room_no, "vitals")
+	connect_to_server(room_no, user_age, "vitals")
 	collect_data()
 	
 	
