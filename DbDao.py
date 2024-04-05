@@ -25,15 +25,15 @@ class DbDao:
         if self.cursor:
             self.cursor.close()
 
-    def add_room(self, room_no, person_name, room_number):
+    def add_room(self, room_no, age):
         self.connect()
-        query = "INSERT INTO Room (room_no, person_name) VALUES (%s, %s)"
-        data = (person_name, room_number)
+        query = "INSERT INTO Room (room_no, age) VALUES (%s, %s)"
+        data = (room_no, age)
         self.cursor.execute(query, data)
         self.conn.commit()
         self.disconnect()
 
-    def get_room_by_id(self, room_no):
+    def get_room_by_no(self, room_no):
         self.connect()
         query = "SELECT * FROM Room WHERE room_no = %s"
         self.cursor.execute(query, (room_no,))
@@ -41,10 +41,10 @@ class DbDao:
         self.disconnect()
         return room
 
-    def add_observation(self, room_no, bpm, bpm_avg, temperature, status):
+    def add_observation(self, room_no, bpm, temp, fall, status):
         self.connect()
-        query = "INSERT INTO Observation (room_no, bpm, bpm_avg, temperature, status) VALUES (%s, %s, %s, %s, %s)"
-        data = (room_no, bpm, bpm_avg, temperature, status)
+        query = "INSERT INTO Observation (room_no, bpm, temperature, fall, status) VALUES (%s, %s, %s, %s, %s)"
+        data = (room_no, bpm, temp, fall, status)
         self.cursor.execute(query, data)
         self.conn.commit()
         self.disconnect()

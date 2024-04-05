@@ -93,7 +93,6 @@ def collect_data():
 		for sample_index in range(0, len(samples), 2):
 			sample = samples[sample_index + 1]
 			if hr.check_for_beat(sample):
-				beat_detected = True
 				delta = t - last_beat
 				last_beat = t
 				bpm = 60 / delta
@@ -106,9 +105,8 @@ def collect_data():
 			contact_c = round(sensor.get_ambient(), 2) #\N{DEGREE SIGN}C is useful
 		
 			# Store data for request
-			collected_data = {"room_id": 25, "bpm": bpm, "bpm_avg": bpm_avg, "ir_c": ir_c, "contact_c" : contact_c}
+			collected_data = {"bpm_avg": bpm_avg, "ir_c": ir_c}
 				
-			beat_detected = False
 			last_update = t
         
 def main():
