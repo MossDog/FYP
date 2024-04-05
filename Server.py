@@ -132,8 +132,7 @@ def store_observation(room_no, user_age, bpm, temp, fall, status):
     # Insert room data into the database if not exists
     room_result = db.get_room_by_id(room_no).fetchone()
     if not room_result:
-        # FIGURE OUT WHAT TO DO WITH AGE
-        db.add_room(room_no, user_age) # REAL AGE VARIABLE NEEDS TO GO HERE
+        db.add_room(room_no, user_age)
 
 
     # Insert observation data into the database
