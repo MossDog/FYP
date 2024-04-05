@@ -50,6 +50,7 @@ def handle_connect():
     global client_data
 
     client_id = request.json.get('room_no')
+    user_age = request.json.get('user_age')
     client_type = request.json.get('client_type')
     client_ip = request.remote_addr
 
@@ -76,12 +77,12 @@ def handle_connect():
     # Start a separate thread to request data from clients
     print(client_data)
     if client_data[client_id][0] and client_data[client_id][1]:
-        threading.Thread(target=request_data, args=(client_id,)).start()
+        threading.Thread(target=request_data, args=(client_id, user_age,)).start()
 
     return jsonify({'message': f"Client {client_id} connected"}), 200
 
 
-def request_data(client_id):
+def request_data(client_id, user_age):
     global client_data
     intervals = {'green':60, 'orange':20, 'red':5}
     while True:
@@ -122,17 +123,17 @@ def request_data(client_id):
 
         status = decide_status(bpm, temp_c, fall)
         
-        store_observation(client_id, bpm, temp_c, fall, status)
+        store_observation(client_id, user_age, bpm, temp_c, fall, status)
 
         time.sleep(intervals[status])
 
 
-def store_observation(room_no, bpm, temp, fall, status):
+def store_observation(room_no, user_age, bpm, temp, fall, status):
     # Insert room data into the database if not exists
     room_result = db.get_room_by_id(room_no).fetchone()
     if not room_result:
         # FIGURE OUT WHAT TO DO WITH AGE
-        db.add_room(room_no, 0) # REAL AGE VARIABLE NEEDS TO GO HERE
+        db.add_room(room_no, user_age) # REAL AGE VARIABLE NEEDS TO GO HERE
 
 
     # Insert observation data into the database
