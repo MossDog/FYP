@@ -12,7 +12,7 @@ services:
       MYSQL_PASSWORD: mossdog
 
     volumes:
-      - C:\Users\lukej\OneDrive\Desktop\New folder\DBVolume:/var/lib/mysql
+      - C:\Users\lukej\OneDrive\Desktop\FYP\Server\DBVolume:/var/lib/mysql
 
     ports:
       - "3306:3306"
