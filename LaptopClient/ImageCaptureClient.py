@@ -57,6 +57,7 @@ if __name__ == "__main__":
     main_thread.start()
     app.run(host="0.0.0.0", port=5000)
 '''
+# Testing
 import cv2 as cv
 
 cap1 = cv.VideoCapture(2)
