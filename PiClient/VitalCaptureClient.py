@@ -126,8 +126,8 @@ def write_user_data(file_path, room_no, user_age):
 		file.write(f"{room_no},{user_age}")
 
 
-def connect_to_server(room_no, user_age, client_type):
-	data = {"room_no":room_no, "user_age":user_age, "client_type":client_type}
+def connect_to_server(room_no, user_age):
+	data = {"room_no":room_no, "user_age":user_age}
 	response = requests.post(f"{SERVER_URL}/connect", json=data)
 	print("Response from server: ", response.text)
 
@@ -180,7 +180,7 @@ def collect_data():
 def main():
 	room_no, user_age = load_user_data()
 	room_no = get_room_number()
-	connect_to_server(room_no, user_age, "vitals")
+	connect_to_server(room_no, user_age)
 	collect_data()
 	
 	
