@@ -1,3 +1,4 @@
+'''
 from flask import Flask, jsonify, request
 import cv2 as cv
 import threading
@@ -55,3 +56,22 @@ if __name__ == "__main__":
     main_thread = threading.Thread(target=main)
     main_thread.start()
     app.run(host="0.0.0.0", port=5000)
+'''
+import cv2 as cv
+
+cap1 = cv.VideoCapture(2)
+_, frame1 = cap1.read()
+cv.imshow("testing1", frame1)
+#cv.waitKey(0)
+cap1.release()
+
+cap2 = cv.VideoCapture(0)
+_, frame2 = cap2.read()
+cv.imshow("testing2", frame2)
+cap2.release()
+
+cv.waitKey(0)
+cv.destroyAllWindows()
+
+
+

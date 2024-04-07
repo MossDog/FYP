@@ -165,9 +165,15 @@ def collect_data():
 			# Get temperature data
 			ir_c = (round(sensor.get_object_1(),2))
 			contact_c = round(sensor.get_ambient(), 2) #\N{DEGREE SIGN}C is useful
+			
+			# Get image data
+			_, frame1 = cap1.read()
+			_, frame2 = cap2.read()
+			frame1_list = frame1.tolist()
+			frame2_list = frame2.tolist()
 		
 			# Store data for request
-			collected_data = {"bpm_avg": bpm_avg, "ir_c": ir_c}
+			collected_data = {"bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1, "frame2":frame2}
 				
 			last_update = t
 
