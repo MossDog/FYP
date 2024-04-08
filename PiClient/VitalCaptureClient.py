@@ -133,6 +133,8 @@ def collect_data():
 				bpm = 60 / delta
 				bpm_vals = bpm_vals[1:] + [bpm]
 				bpm_avg = sum(bpm_vals) / average_over
+
+		if t - last_update >= delay: last_update = t
 	
 	
 def send_data(room_no, user_age):
