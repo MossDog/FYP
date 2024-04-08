@@ -58,7 +58,7 @@ def process_data():
 
 def store_observation(room_no, user_age, bpm, temp, fall, status):
     # Insert room data into the database if not exists
-    room_result = db.get_room_by_id(room_no).fetchone()
+    room_result = db.get_room_by_no(room_no)
     if not room_result:
         db.add_room(room_no, user_age)
 
@@ -95,8 +95,10 @@ def decide_status(bpm, temp_c, fall):
 
 
 def calculate_trendline_angle(points):
+    print(f"POINTS: {points}")
+
     # Filter out points with null values
-    filtered_points = [point for point in points if None not in point]
+    filtered_points = [point for point in points if point is not None]
 
     if len(filtered_points) > (len(points) / 3) * 2: # more than 2/3 of points must be recognised to make prediction
 
