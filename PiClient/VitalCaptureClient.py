@@ -1,4 +1,3 @@
-from flask import Flask, jsonify, request
 from max30105 import MAX30105, HeartRate
 from smbus2 import SMBus
 from mlx90614 import MLX90614
@@ -10,9 +9,6 @@ import os
 
 # IP:port of server
 SERVER_URL = 'http://192.168.0.25:5000' 
-
-# Set up flask app
-app = Flask(__name__)
 
 # Set up temperature sensor
 bus = SMBus(1)
@@ -33,23 +29,7 @@ max30105.set_slot_mode(4, 'off')
 
 hr = HeartRate(max30105)
 
-collected_data = None
-
-'''
-# Function to send data to PC
-def send_data(data):
-    url = 'http://192.168.0.25:5000/receive_data'  # IP:port/route of server
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    print("Response from PC:", response.text)
-'''
-
-
-@app.route('/request_data', methods=['GET'])
-def send_data():
-	global collected_data
-	return jsonify(collected_data)
-	
+sensor_data = None
 
 # Function to load user data from file or prompt user for new data
 def load_user_data():
@@ -87,19 +67,6 @@ def print_user_data(data):
 	print("\n1. Data is up to date\n2. Data is outdated")
 
 
-# Function to get user option
-def get_user_option():
-	while True:
-		try:
-			option = int(input("Please select an option: "))
-			if option in (1, 2):
-				return option
-			else:
-				print("Invalid option. Please select either 1 or 2.")
-		except ValueError:
-			print("Invalid input. Please enter a valid integer.")
-            
-
 # Function to gather new user input
 def gather_user_input():
 	while True:
@@ -118,6 +85,19 @@ def gather_user_input():
 				print("Room number and age must be positive integers.")
 		except ValueError:
 			print("Invalid input. Please enter a valid integer.")
+			
+			
+# Function to get user option
+def get_user_option():
+	while True:
+		try:
+			option = int(input("Please select an option: "))
+			if option in (1, 2):
+				return option
+			else:
+				print("Invalid option. Please select either 1 or 2.")
+		except ValueError:
+			print("Invalid input. Please enter a valid integer.")
 
 
 # Function to write user data to file
@@ -126,14 +106,8 @@ def write_user_data(file_path, room_no, user_age):
 		file.write(f"{room_no},{user_age}")
 
 
-def connect_to_server(room_no, user_age):
-	data = {"room_no":room_no, "user_age":user_age}
-	response = requests.post(f"{SERVER_URL}/connect", json=data)
-	print("Response from server: ", response.text)
-
-
 def collect_data():
-	global collected_data
+	global sensor_data
 	
 	average_over=4
 	delay=3
@@ -169,24 +143,40 @@ def collect_data():
 			# Get image data
 			_, frame1 = cap1.read()
 			_, frame2 = cap2.read()
+			
+			# Encode image data to send
 			frame1_list = frame1.tolist()
 			frame2_list = frame2.tolist()
 		
-			# Store data for request
-			collected_data = {"bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1, "frame2":frame2}
+			# Store data for processing
+			data = {"bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1, "frame2":frame2}
 				
 			last_update = t
-
+	
+	
+def send_data(room_no, user_age):
+	global sensor_data
+	while True:
+		data = {"room_no":room_no, "user_age":user_age}
+		data.update(sensor_data)
+		response = requests.post(f"{SERVER_URL}/process_data", json=data)
+		print(response.json().get('message'))
+		delay = response.json().get('delay')
+		time.sleep(delay)
+		
+		
 def main():
 	room_no, user_age = load_user_data()
-	room_no = get_room_number()
-	connect_to_server(room_no, user_age)
-	collect_data()
-	
-	
+	send_data(room_no, user_age)
 		
+				
 if __name__ == "__main__":
+	data_collection_thread = threading.Thread(target=collect_data)
+	data_collection_thread.start()
+	main()
+	'''
 	main_thread = threading.Thread(target=main)
 	main_thread.start()
 	
 	app.run(host="0.0.0.0", port=5000)
+	'''
