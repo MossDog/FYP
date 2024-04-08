@@ -178,9 +178,3 @@ if __name__ == "__main__":
 	data_collection_thread = threading.Thread(target=collect_data)
 	data_collection_thread.start()
 	main()
-	'''
-	main_thread = threading.Thread(target=main)
-	main_thread.start()
-	
-	app.run(host="0.0.0.0", port=5000)
-	'''

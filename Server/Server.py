@@ -22,7 +22,7 @@ def process_data():
     intervals = {'green':60, 'orange':20, 'red':5}
     fall = False
 
-    client_id = request.json.get('room_no')
+    room_no = request.json.get('room_no')
     user_age = request.json.get('user_age')
     
     bpm = request.json.get('bpm_avg')
@@ -49,7 +49,7 @@ def process_data():
     
     status = decide_status(bpm, temp_c, fall)
         
-    store_observation(client_id, user_age, bpm, temp_c, fall, status)
+    store_observation(room_no, user_age, bpm, temp_c, fall, status)
 
     return jsonify({'message': "Data successfully processed", "delay":intervals[status]}), 200
 
