@@ -30,7 +30,7 @@ max30105.set_slot_mode(4, 'off')
 
 hr = HeartRate(max30105)
 
-sensor_data = None
+bpm_avg = 0
 
 # Function to load user data from file or prompt user for new data
 def load_user_data():
@@ -108,19 +108,14 @@ def write_user_data(file_path, room_no, user_age):
 
 
 def collect_data():
-	global sensor_data
-	
+	global bpm_avg
 	average_over=4
 	delay=3
 	bpm_vals = [0 for x in range(average_over)]
 	last_beat = time.time()
 	last_update = time.time()
 	bpm = 0
-	bpm_avg = 0
 	beat_detected = False
-
-	cap1 = cv.VideoCapture(0)
-	cap2 = cv.VideoCapture(2)
 	
 	while True:
 		t = time.time()
@@ -138,32 +133,32 @@ def collect_data():
 				bpm = 60 / delta
 				bpm_vals = bpm_vals[1:] + [bpm]
 				bpm_avg = sum(bpm_vals) / average_over
-
-		if t - last_update >= delay:
-			# Get temperature data
+	
+	
+def send_data(room_no, user_age):
+	global bpm_avg
+	
+	while True:
+		# Get temperature data
 			ir_c = (round(sensor.get_object_1(),2))
 			#contact_c = round(sensor.get_ambient(), 2) #\N{DEGREE SIGN}C is useful
 			
 			# Get image data
+			cap1 = cv.VideoCapture(0)
 			_, frame1 = cap1.read()
+			cap1.release()
+			
+			cap2 = cv.VideoCapture(2)
 			_, frame2 = cap2.read()
+			cap2.release()
 			
 			# Encode image data to send
 			frame1_list = frame1.tolist()
-			frame2_list = frame2.tolist()
-		
+			frame2_list = frame2.tolist()		
+			
 			# Store data to be sent for processing
-			data = {"bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1_list, "frame2":frame2_list}
-				
-			last_update = t
-	
-	
-def send_data(room_no, user_age):
-	global sensor_data
-	while True:
-		if sensor_data is not None:
-			data = {"room_no":room_no, "user_age":user_age}
-			data.update(sensor_data)
+			data = {"room_no": room_no, "user_age": user_age, "bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1_list, "frame2":frame2_list}
+
 			response = requests.post(f"{SERVER_URL}/process_data", json=data)
 			print(response.json().get('message'))
 			delay = response.json().get('delay')
