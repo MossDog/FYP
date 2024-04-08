@@ -2,6 +2,7 @@ from max30105 import MAX30105, HeartRate
 from smbus2 import SMBus
 from mlx90614 import MLX90614
 import threading
+import cv2 as cv
 import requests
 import json
 import time
@@ -117,6 +118,9 @@ def collect_data():
 	bpm = 0
 	bpm_avg = 0
 	beat_detected = False
+
+	cap1 = cv.VideoCapture(0)
+	cap2 = cv.VideoCapture(2)
 	
 	while True:
 		t = time.time()
@@ -138,7 +142,7 @@ def collect_data():
 		if t - last_update >= delay:
 			# Get temperature data
 			ir_c = (round(sensor.get_object_1(),2))
-			contact_c = round(sensor.get_ambient(), 2) #\N{DEGREE SIGN}C is useful
+			#contact_c = round(sensor.get_ambient(), 2) #\N{DEGREE SIGN}C is useful
 			
 			# Get image data
 			_, frame1 = cap1.read()
@@ -148,8 +152,8 @@ def collect_data():
 			frame1_list = frame1.tolist()
 			frame2_list = frame2.tolist()
 		
-			# Store data for processing
-			data = {"bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1, "frame2":frame2}
+			# Store data to be sent for processing
+			data = {"bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1_list, "frame2":frame2_list}
 				
 			last_update = t
 	

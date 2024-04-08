@@ -16,116 +16,42 @@ db = DbDao()
 
 client_data  = {}
 
-@app.route('/receive_data', methods=['POST'])
-def receive_data():
-    data = request.json  # Assuming the data is sent in JSON format
 
-    # Extract data fields
-    room_no = data.get('room_no')
-    bpm = data.get('bpm')
-    bpm_avg = data.get('bpm_avg')
-    ir_c = data.get('ir_c')
-
-    #Decide status
-    status = decide_status(bpm, ir_c)
-
-    print(f"Room: {room_no}\nBPM: {bpm}\nAverage BPM: {bpm_avg}\nIR Temp: {ir_c}")
-    
-    # Insert room data into the database if not exists
-    room_result = db.get_room_by_id(room_no).fetchone()
-    if not room_result:
-        # FIGURE OUT WHAT TO DO WITH NAME/ROOMTABLE STUFF
-        db.add_room(room_no, "PLACEHOLDER NAME")
-
-
-    # Insert observation data into the database
-    db.add_observation(room_no, bpm, bpm_avg, ir_c, status)
-
-
-    print("Received data from client and stored in the database:", data)
-    return "Data received and stored successfully"
-
-@app.route('/connect', methods=['POST'])
-def handle_connect():
-    global client_data
+@app.route('/process_data', methods=['POST'])
+def process_data():
+    intervals = {'green':60, 'orange':20, 'red':5}
+    fall = False
 
     client_id = request.json.get('room_no')
     user_age = request.json.get('user_age')
-    client_type = request.json.get('client_type')
-    client_ip = request.remote_addr
+    
+    bpm = request.json.get('bpm_avg')
+    temp_c = request.json.get('ir_c')
+    frame1_list = request.json.get('frame1')
+    frame2_list = request.json.get('frame2')
 
-    # Store client ips
-    # client_data structure - {client id: (vitals ip, cameras ip)}
-    if client_type == "vitals":
+    # Convert lists back to NumPy arrays
+    frame1 = np.array(frame1_list, dtype=np.uint8)
+    frame2 = np.array(frame2_list, dtype=np.uint8)
 
-        if client_data and client_id in client_data:
-            _, cameras_ip = client_data[client_id]
-            client_data[client_id] = (client_ip, cameras_ip)
-        else:
-            client_data[client_id] = (client_ip, None)
+    # Process frames
+    angle1 = process_frame(frame1)
+    angle2 = process_frame(frame2)
 
-    elif client_type == "cameras":
-
-        if client_id in client_data:
-            vitals_ip, _ = client_data[client_id]
-            client_data[client_id] = (vitals_ip, client_ip)
-        else:
-            client_data[client_id] = (client_ip, None)
-
-    print(f"Client {client_id} connected from {client_ip}")
-
-    # Start a separate thread to request data from clients
-    print(client_data)
-    if client_data[client_id][0] and client_data[client_id][1]:
-        threading.Thread(target=request_data, args=(client_id, user_age,)).start()
-
-    return jsonify({'message': f"Client {client_id} connected"}), 200
-
-
-def request_data(client_id, user_age):
-    global client_data
-    intervals = {'green':60, 'orange':20, 'red':5}
-    while True:
-
-        print("requesting vital data")
-        vital_response = requests.get(f"http://{client_data[client_id][0]}:5000/request_data")
-        vital_data = vital_response.json()
-
-        bpm = vital_data.get('bpm_avg')
-        temp_c = vital_data.get('ir_c')
-
-        print("requesting camera data")
-        camera_response = requests.get(f"http://{client_data[client_id][1]}:5000/request_data")
-        camera_data = camera_response.json()
-        frame1_list = camera_data.get('frame1')
-        frame2_list = camera_data.get('frame2')
-
-        # Convert lists back to NumPy arrays
-        frame1 = np.array(frame1_list, dtype=np.uint8)
-        frame2 = np.array(frame2_list, dtype=np.uint8)
-
-        # Process frames
-        points1 = process_frame(frame1)
-        points2 = process_frame(frame2)
-
-        angle1 = abs(calculate_trendline_angle(points1))
-        angle2 = abs(calculate_trendline_angle(points2))
-
-        fall = False
-        # status is unchanged -- abs(angle1) > 40 OR abs(angle2) > 40
-        if angle1 is not None and angle2 is not None:
-            if abs(angle1) < 40 or abs(angle2) < 40:
-                fall = True
-        else:
-            # Increase status if not enough info for decision
-            # This creates bias towards false positives to avoid false negatives
+    # status is unchanged -- abs(angle1) > 40 OR abs(angle2) > 40
+    if angle1 is not None and angle2 is not None:
+        if abs(angle1) < 40 or abs(angle2) < 40:
             fall = True
-
-        status = decide_status(bpm, temp_c, fall)
+    else:
+        # Increase status if not enough info for decision
+        # This creates bias towards false positives to avoid false negatives
+        fall = True
+    
+    status = decide_status(bpm, temp_c, fall)
         
-        store_observation(client_id, user_age, bpm, temp_c, fall, status)
+    store_observation(client_id, user_age, bpm, temp_c, fall, status)
 
-        time.sleep(intervals[status])
+    return jsonify({'message': "Data successfully processed", "delay":intervals[status]}), 200
 
 
 def store_observation(room_no, user_age, bpm, temp, fall, status):
@@ -177,7 +103,7 @@ def calculate_trendline_angle(points):
         y = np.array([point[1] for point in filtered_points])
 
         # Perform linear regression to find the trendline
-        slope, intercept, _, _, _ = linregress(x, y)
+        slope, _, _, _, _ = linregress(x, y)
 
         # Calculate the angle of the trendline
         angle_radians = np.arctan(slope)
@@ -228,7 +154,9 @@ def process_frame(frame):
         y = (frameHeight * point[1]) / out.shape[2]
         # Add a point if it's confidence is higher than threshold.
         points.append((int(x), int(y)) if conf > threshold else None)
-        points[-1] = None
+    
+    points[-1] = None
+    return calculate_trendline_angle(points)
     
 
 if __name__ == '__main__':
