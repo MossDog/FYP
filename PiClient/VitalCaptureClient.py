@@ -161,12 +161,13 @@ def collect_data():
 def send_data(room_no, user_age):
 	global sensor_data
 	while True:
-		data = {"room_no":room_no, "user_age":user_age}
-		data.update(sensor_data)
-		response = requests.post(f"{SERVER_URL}/process_data", json=data)
-		print(response.json().get('message'))
-		delay = response.json().get('delay')
-		time.sleep(delay)
+		if sensor_data is not None:
+			data = {"room_no":room_no, "user_age":user_age}
+			data.update(sensor_data)
+			response = requests.post(f"{SERVER_URL}/process_data", json=data)
+			print(response.json().get('message'))
+			delay = response.json().get('delay')
+			time.sleep(delay)
 		
 		
 def main():

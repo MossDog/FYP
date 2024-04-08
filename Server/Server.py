@@ -19,6 +19,7 @@ client_data  = {}
 
 @app.route('/process_data', methods=['POST'])
 def process_data():
+    print("processing data")
     intervals = {'green':60, 'orange':20, 'red':5}
     fall = False
 
@@ -50,6 +51,7 @@ def process_data():
     status = decide_status(bpm, temp_c, fall)
         
     store_observation(room_no, user_age, bpm, temp_c, fall, status)
+    print(f"Processed data | Room Number: {room_no}, User Age: {user_age}, BPM: {bpm}, Temperature: {temp_c}, Fall: {fall}, Status: {status}")
 
     return jsonify({'message': "Data successfully processed", "delay":intervals[status]}), 200
 
