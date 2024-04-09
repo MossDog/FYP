@@ -68,4 +68,10 @@ public class Observation {
     public void setFall(boolean fall) {
         this.fall = fall;
     }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "OBSERVATION: " + roomNo + " " + bpm + " " + temperature + " " + timeObserved + " " + fall + " " + status + " ";
+    }
 }

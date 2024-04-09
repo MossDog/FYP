@@ -26,8 +26,8 @@ def process_data():
     room_no = request.json.get('room_no')
     user_age = request.json.get('user_age')
     
-    bpm = request.json.get('bpm_avg')
-    temp_c = request.json.get('ir_c')
+    bpm = request.json.get('bpm')
+    temp_c = request.json.get('temp')
     frame1_list = request.json.get('frame1')
     frame2_list = request.json.get('frame2')
 
@@ -68,6 +68,7 @@ def store_observation(room_no, user_age, bpm, temp, fall, status):
 
 
 def decide_status(bpm, temp_c, fall):
+    print(f"DECIDING STATUS OF: {bpm}, {temp_c}, {fall}")
     status = 0
 
     # Status is unchanged -- 60 < BPM < 100
@@ -77,14 +78,15 @@ def decide_status(bpm, temp_c, fall):
         status += 2
 
     # status is unchanged -- 19C < TEMP_C < 23C
-    if 18 < temp_c < 24:
+    if 18 > temp_c > 24:
         status += 1
-    elif 17 < temp_c < 25:
+    elif 17 > temp_c > 25:
         status += 2
 
     if fall:
         status += 1
     
+    print(f"STATUS: {status}")
     # Return status
     if status == 0:
         return "green"

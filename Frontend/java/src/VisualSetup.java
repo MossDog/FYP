@@ -84,7 +84,10 @@ public class VisualSetup extends PApplet
 
     public void displayObservations(int roomIndex) {
         //observations = dbDao.getObservationsByRoomAndTimeRange(rooms.get(roomIndex).getRoomNo(), System.currentTimeMillis() - 60000, System.currentTimeMillis());
-        observations = dbDao.getObservationsByRoomNo(rooms.get(roomIndex).getRoomNo());
+        observations = dbDao.getRecentObservationsByRoomNo(rooms.get(roomIndex).getRoomNo());
+        for (Observation obs : observations){
+            System.out.println(obs.toString());
+        }
         System.out.println("OBSERVATIONS LENGTH: " + observations.size());
         
         // Draw BPM graph
@@ -121,8 +124,11 @@ public class VisualSetup extends PApplet
         float xIncrement = (float) width / (observations.size() - 1); // Calculate x-increment based on the number of observations
         float x = xPos;
         float previousX = xPos;
-        float previousY = yPos + height - (observations.get(0).getBpm() - minValue) * yIncrement;
-        for (int i = 0; i < observations.size(); i++) {
+        float previousY = yPos + height - (observations.get(observations.size() - 1).getBpm() - minValue) * yIncrement; // Use the last observation's value
+        if (parameter.equals("Temperature")) {
+            previousY = yPos + height - (observations.get(observations.size() - 1).getTemperature() - minValue) * yIncrement;
+        }
+        for (int i = observations.size() - 1; i >= 0; i--) {
             float value = (parameter.equals("BPM")) ? observations.get(i).getBpm() : observations.get(i).getTemperature();
             float y = yPos + height - (value - minValue) * yIncrement;
             stroke(255, 0, 0);
@@ -146,7 +152,7 @@ public class VisualSetup extends PApplet
     
         // Draw tick marks and labels on the x-axis
         stroke(255);
-        int numXTicks = Math.min(observations.size(), 10); // Limit the number of x-axis ticks to 10
+        int numXTicks = observations.size()-1; // Limit the number of x-axis ticks to 10
         x = xPos; // Reset x position
         for (int i = 0; i <= numXTicks; i++) {
             line(x, yPos + height - 5, x, yPos + height + 5); // Draw tick mark
@@ -170,6 +176,7 @@ public class VisualSetup extends PApplet
             text(label, xPos - 10, y); // Draw label
         }
     }
+    
 
 
     public void drawStatusIndicator() {
@@ -182,7 +189,7 @@ public class VisualSetup extends PApplet
         rect(colorBoxX, colorBoxY, colorBoxWidth, colorBoxHeight);
         fill(0);
         textAlign(CENTER, CENTER);
-        text(lastStatus.toUpperCase(), colorBoxX + colorBoxWidth / 2, colorBoxY + colorBoxHeight / 2);
+        text("Status: " + lastStatus.toUpperCase(), colorBoxX + colorBoxWidth / 2, colorBoxY + colorBoxHeight / 2);
     }
     
 

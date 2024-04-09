@@ -57,7 +57,6 @@ public class DbDao {
             statement.setInt(1, roomNo);
             ResultSet resultSet = statement.executeQuery();
 
-
             while (resultSet.next()) {
                 System.out.println("LOOK HERE " + resultSet.getInt("bpm"));
 
@@ -75,6 +74,29 @@ public class DbDao {
         }
         return observations;
     }
+
+    public List<Observation> getRecentObservationsByRoomNo(int roomNo) {
+        List<Observation> observations = new ArrayList<>();
+        String query = "SELECT * FROM Observation WHERE room_no = ? ORDER BY time_observed DESC LIMIT 10";
+        try (PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setInt(1, roomNo);
+            ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                int bpm = resultSet.getInt("bpm");
+                float temperature = resultSet.getFloat("temperature");
+                boolean fall = resultSet.getBoolean("fall");
+                Timestamp timeObserved = resultSet.getTimestamp("time_observed");
+                String status = resultSet.getString("status");
+                Observation observation = new Observation(roomNo, bpm, temperature, fall, timeObserved, status);
+                observations.add(observation);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return observations;
+    }
+    
+    
 
     public List<Observation> getObservationsByRoomAndTimeRange(int roomNo, long startTime, long endTime) {
         List<Observation> observations = new ArrayList<>();
