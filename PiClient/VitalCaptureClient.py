@@ -11,10 +11,6 @@ import os
 # IP:port of server
 SERVER_URL = 'http://192.168.0.25:5000' 
 
-# Set up temperature sensor
-bus = SMBus(1)
-sensor = MLX90614(bus, address=0x5A)
-
 # Set up and configure pulse sensor
 max30105 = MAX30105()
 max30105.setup(leds_enable=2)
@@ -30,7 +26,7 @@ max30105.set_slot_mode(4, 'off')
 
 hr = HeartRate(max30105)
 
-bpm_avg = 0
+data = {}
 
 # Function to load user data from file or prompt user for new data
 def load_user_data():
@@ -107,14 +103,16 @@ def write_user_data(file_path, room_no, user_age):
 		file.write(f"{room_no},{user_age}")
 
 
-def collect_data():
-	global bpm_avg
+def get_bpm_and_temp():
+	global data
 	average_over=4
 	delay=3
 	bpm_vals = [0 for x in range(average_over)]
 	last_beat = time.time()
 	last_update = time.time()
 	bpm = 0
+	bpm_avg = 0
+	ir_c = 0
 	beat_detected = False
 	
 	while True:
@@ -122,6 +120,7 @@ def collect_data():
 
 		# Ensure samples have been taken
 		samples = hr.max30105.get_samples()
+		#print(f"samples: {samples}")
 		if samples is None:
 			continue
 
@@ -133,46 +132,53 @@ def collect_data():
 				bpm = 60 / delta
 				bpm_vals = bpm_vals[1:] + [bpm]
 				bpm_avg = sum(bpm_vals) / average_over
+		
+		ir_c = max30105.get_temperature()
 
-		if t - last_update >= delay: last_update = t
+		if t - last_update >= delay:
+			# Get temperature data
+			#ir_c = (round(sensor.get_object_1(),2)) #\N{DEGREE SIGN}C is useful
+			ir_c = max30105.get_temperature()
+			# Store data to be sent for processing
+			data = {"temp": ir_c, "bpm": bpm_avg}
+			
+			last_update = t
 	
 	
-def send_data(room_no, user_age):
-	global bpm_avg
+def collect_and_send_data(room_no, user_age):
+	global data
+	
+	bpm_and_temp_thread = threading.Thread(target=get_bpm_and_temp)
+	bpm_and_temp_thread.start()
 	
 	while True:
-		# Get temperature data
-			ir_c = (round(sensor.get_object_1(),2))
-			#contact_c = round(sensor.get_ambient(), 2) #\N{DEGREE SIGN}C is useful
-			
-			# Get image data
-			cap1 = cv.VideoCapture(0)
-			_, frame1 = cap1.read()
-			cap1.release()
-			
-			cap2 = cv.VideoCapture(2)
-			_, frame2 = cap2.read()
-			cap2.release()
-			
-			# Encode image data to send
-			frame1_list = frame1.tolist()
-			frame2_list = frame2.tolist()		
-			
-			# Store data to be sent for processing
-			data = {"room_no": room_no, "user_age": user_age, "bpm_avg": bpm_avg, "ir_c": ir_c, "frame1":frame1_list, "frame2":frame2_list}
-
-			response = requests.post(f"{SERVER_URL}/process_data", json=data)
+		# Get image data
+		cap1 = cv.VideoCapture(0)
+		_, frame1 = cap1.read()
+		cap1.release()
+		
+		cap2 = cv.VideoCapture(2)
+		_, frame2 = cap2.read()
+		cap2.release()
+		
+		# Encode image data to send
+		frame1_list = frame1.tolist()
+		frame2_list = frame2.tolist()	
+#
+		camera_data = {"room_no": room_no, "user_age": user_age, "frame1": frame1_list, "frame2": frame2_list}	
+		
+		if data:
+			camera_data.update(data)
+			print(camera_data['bpm'])
+			response = requests.post(f"{SERVER_URL}/process_data", json=camera_data)
 			print(response.json().get('message'))
-			delay = response.json().get('delay')
-			time.sleep(delay)
+			time.sleep(response.json().get('delay'))
 		
 		
 def main():
 	room_no, user_age = load_user_data()
-	send_data(room_no, user_age)
+	collect_and_send_data(room_no, user_age)
 		
 				
 if __name__ == "__main__":
-	data_collection_thread = threading.Thread(target=collect_data)
-	data_collection_thread.start()
 	main()
