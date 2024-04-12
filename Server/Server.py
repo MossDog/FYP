@@ -78,9 +78,9 @@ def decide_status(bpm, temp_c, fall):
         status += 2
 
     # status is unchanged -- 19C < TEMP_C < 23C
-    if 18 > temp_c > 24:
+    if 18 < temp_c < 19 or 23 < temp_c < 24: # Harmful temperature range
         status += 1
-    elif 17 > temp_c > 25:
+    elif 17 < temp_c < 18 or 24 < temp_c < 25: # More harmful temperature range
         status += 2
 
     if fall:
@@ -128,12 +128,6 @@ def process_frame(frame):
                 "LShoulder": 5, "LElbow": 6, "LWrist": 7, "RHip": 8, "RKnee": 9,
                 "RAnkle": 10, "LHip": 11, "LKnee": 12, "LAnkle": 13, "REye": 14,
                 "LEye": 15, "REar": 16, "LEar": 17, "Background": 18 }
-
-    POSE_PAIRS = [ ["Neck", "RShoulder"], ["Neck", "LShoulder"], ["RShoulder", "RElbow"],
-                ["RElbow", "RWrist"], ["LShoulder", "LElbow"], ["LElbow", "LWrist"],
-                ["Neck", "RHip"], ["RHip", "RKnee"], ["RKnee", "RAnkle"], ["Neck", "LHip"],
-                ["LHip", "LKnee"], ["LKnee", "LAnkle"], ["Neck", "Nose"], ["Nose", "REye"],
-                ["REye", "REar"], ["Nose", "LEye"], ["LEye", "LEar"] ]
     
     threshold = 0.2
     frame_dim = 368
