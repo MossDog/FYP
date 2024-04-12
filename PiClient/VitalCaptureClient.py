@@ -137,7 +137,6 @@ def get_bpm_and_temp():
 
 		if t - last_update >= delay:
 			# Get temperature data
-			#ir_c = (round(sensor.get_object_1(),2)) #\N{DEGREE SIGN}C is useful
 			ir_c = max30105.get_temperature()
 			# Store data to be sent for processing
 			data = {"temp": ir_c, "bpm": bpm_avg}
@@ -167,6 +166,7 @@ def collect_and_send_data(room_no, user_age):
 #
 		camera_data = {"room_no": room_no, "user_age": user_age, "frame1": frame1_list, "frame2": frame2_list}	
 		
+		# Send data if it has been stored
 		if data:
 			camera_data.update(data)
 			print(camera_data['bpm'])

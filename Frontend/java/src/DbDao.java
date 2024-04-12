@@ -9,7 +9,7 @@ import java.util.List;
 
 public class DbDao {
 
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/DB";
+    private static final String DB_URL = "jdbc:mysql://192.168.0.25:3306/DB";
     private static final String USERNAME = "mossdog";
     private static final String PASSWORD = "mossdog";
 
@@ -23,15 +23,6 @@ public class DbDao {
         }
     }
 
-    public void disconnect() {
-        if (conn != null) {
-            try {
-                conn.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     public List<Room> getAllRooms() {
         List<Room> rooms = new ArrayList<>();
@@ -95,46 +86,19 @@ public class DbDao {
         }
         return observations;
     }
-    
-    
 
-    public List<Observation> getObservationsByRoomAndTimeRange(int roomNo, long startTime, long endTime) {
-        List<Observation> observations = new ArrayList<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
-            String query = "SELECT * FROM Observation WHERE room_no = ? AND time_observed BETWEEN ? AND ?";
-            stmt = conn.prepareStatement(query);
-            stmt.setInt(1, roomNo);
-            stmt.setTimestamp(2, new Timestamp(startTime));
-            stmt.setTimestamp(3, new Timestamp(endTime));
-            rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                Observation observation = new Observation();
-                observation.setRoomNo(rs.getInt("room_no"));
-                observation.setBpm(rs.getInt("bpm"));
-                observation.setTemperature(rs.getFloat("temperature"));
-                observation.setFall(rs.getBoolean("fall"));
-                observation.setTimeObserved(rs.getTimestamp("time_observed"));
-                observation.setStatus(rs.getString("status"));
-                observations.add(observation);
+    public String getRecentstatusByRoomNo(int roomNo) {
+        String status = "";
+        String query = "SELECT status FROM Observation WHERE room_no = ? ORDER BY time_observed DESC LIMIT 1";
+        try (PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setInt(1, roomNo);
+            ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                status = resultSet.getString("status");
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            // Close resources
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
-        return observations;
+        return status;
     }
 }

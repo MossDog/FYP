@@ -17,7 +17,7 @@ public class VisualSetup extends PApplet
     int GRAPH_MARGIN_Y;
     int GRAPH_MARGIN_X;
 
-    //settings
+
     public void settings()
     {
         size(1920, 1080);
@@ -34,10 +34,9 @@ public class VisualSetup extends PApplet
                 refreshData();
             }
         }, 5000L, 5000L); // Refresh data every 5 seconds
-    }//end settings
+    }
 
 
-    //setup
     public void setup()
     {
 
@@ -46,10 +45,10 @@ public class VisualSetup extends PApplet
         GRAPH_MARGIN_X = (width - (GRAPH_WIDTH * 2))/3;
         GRAPH_MARGIN_Y = (height - GRAPH_HEIGHT)/3;
 
-    }//end setup
+    }
 
 
-    //draw
+
     public void draw(){
 
         background(0);
@@ -59,7 +58,7 @@ public class VisualSetup extends PApplet
             drawStatusIndicator();
         }
 
-    }//end draw
+    }
 
 
     public void displayRoomList() {
@@ -69,21 +68,32 @@ public class VisualSetup extends PApplet
         for (int i = 0; i < rooms.size(); i++) {
             Room room = rooms.get(i);
             fill(255, 255, 255, 100);
+            String status = dbDao.getRecentstatusByRoomNo(rooms.get(i).getRoomNo());
             String text = "Room " + room.getRoomNo();
-            rect(20, yPos, (int)((TEXT_SIZE * text.length()) * 0.6), TEXT_SIZE+5);
+
+
             if (i == selectedRoomIndex) {
-                fill(255, 0, 0);
+                fill(255);
+                stroke(getColor(status));
+                rect(20, yPos, (int)((TEXT_SIZE * text.length()) * 0.6), TEXT_SIZE+5);
+                fill(0);
+                text(text, 20, yPos);
             } else {
                 fill(0);
+                stroke(getColor(status));
+                rect(20, yPos, (int)((TEXT_SIZE * text.length()) * 0.6), TEXT_SIZE+5);
+                fill(255);
+                text(text, 20, yPos);
             }
-            text(text, 20, yPos);
+
+            
+            
             yPos += TEXT_SIZE+10;
         }
     }
 
 
     public void displayObservations(int roomIndex) {
-        //observations = dbDao.getObservationsByRoomAndTimeRange(rooms.get(roomIndex).getRoomNo(), System.currentTimeMillis() - 60000, System.currentTimeMillis());
         observations = dbDao.getRecentObservationsByRoomNo(rooms.get(roomIndex).getRoomNo());
         for (Observation obs : observations){
             System.out.println(obs.toString());
@@ -180,7 +190,7 @@ public class VisualSetup extends PApplet
 
 
     public void drawStatusIndicator() {
-        String lastStatus = observations.get(observations.size() - 1).getStatus();
+        String lastStatus = observations.get(0).getStatus();
         int colorBoxWidth = 100;
         int colorBoxHeight = 50;
         int colorBoxX = GRAPH_MARGIN_X + GRAPH_WIDTH + (GRAPH_MARGIN_X/2) - (colorBoxWidth/2); // Adjust the x position as needed

@@ -19,11 +19,6 @@ class DbDao:
         )
         self.cursor = self.conn.cursor()
 
-    def disconnect(self):
-        if self.conn:
-            self.conn.close()
-        if self.cursor:
-            self.cursor.close()
 
     def add_room(self, room_no, age):
         self.connect()
@@ -48,19 +43,3 @@ class DbDao:
         self.cursor.execute(query, data)
         self.conn.commit()
         self.disconnect()
-
-    def get_observations_by_room_no(self, room_no):
-        self.connect()
-        query = "SELECT * FROM Observation WHERE room_no = %s"
-        self.cursor.execute(query, (room_no,))
-        observations = self.cursor.fetchall()
-        self.disconnect()
-        return observations
-    
-    def get_observations_by_room_and_time_range(self, room_no, start_time, end_time):
-        self.connect()
-        query = "SELECT * FROM Observation WHERE room_no = %s AND time_observed BETWEEN %s AND %s"
-        self.cursor.execute(query, (room_no, start_time, end_time))
-        observations = self.cursor.fetchall()
-        self.disconnect()
-        return observations
